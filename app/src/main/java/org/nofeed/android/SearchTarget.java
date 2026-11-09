@@ -12,7 +12,7 @@ public enum SearchTarget {
     TAOBAO("淘宝", "com.taobao.taobao", "tbopen://m.taobao.com/tbopen/index.html?action=ali.open.nav&module=h5&h5Url=https%3A%2F%2Fs.taobao.com%2Fsearch%3Fq%3D{query}", "https://s.taobao.com/search?q={query}"),
     XIANYU("闲鱼", "com.taobao.idlefish", "fleamarket://idle_search?flutter=true&flutter_animated=false&initSubPageTag=searchResult&keyword={query}", "https://www.goofish.com/search?q={query}"),
     PINDUODUO("拼多多", "com.xunmeng.pinduoduo", "pinduoduo://com.xunmeng.pinduoduo/search_result.html?search_key={query}", "https://mobile.yangkeduo.com/search_result.html?search_key={query}"),
-    DIANPING("大众点评", "com.dianping.v1", "dianping://searchshoplist?keyword={query}", "https://m.dianping.com/search"),
+    DIANPING("大众点评", "com.dianping.v1", "dianping://searchshoplist?keyword={query}", "https://m.dianping.com/search/keyword/{query}/0_0"),
     DOUBAN("豆瓣", "com.douban.frodo", "douban://douban.com/search/result?q={query}", "https://www.douban.com/search?q={query}"),
     MEITUAN("美团", "com.sankuai.meituan", "imeituan://www.meituan.com/search/result?q={query}", null),
     WECHAT("微信", "com.tencent.mm", null, null),
