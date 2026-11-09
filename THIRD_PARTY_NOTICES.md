@@ -1,0 +1,19 @@
+# Third-party notices
+
+## Changes in Search 1.2.0 (this fork)
+
+- The bundled Noto Serif SC font has been **removed**; the UI uses the system sans-serif font. The OFL notice below is kept for the historical 0.3.x–0.8.2 builds only and no longer applies to the shipped APK.
+- Platform tiles now render the icon returned by Android `PackageManager` for the target package instead of bundled platform artwork; no platform image assets are redistributed in this fork.
+- Everything else below is inherited unchanged from upstream yisou.
+
+The application has no third-party runtime code dependencies. Android APIs and build tooling are provided by their respective projects under their own terms and are not relicensed by this repository.
+
+Up to version 0.8.2 the application bundled **Noto Serif SC Regular 2.003**, copyright 2017–2024 Adobe (http://www.adobe.com/), licensed under the **SIL Open Font License 1.1**, not AGPL. The unmodified font is from [notofonts/noto-cjk, commit f8d157532fbfaeda587e826d4cd5b21a49186f7c](https://github.com/notofonts/noto-cjk/blob/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Serif/SubsetOTF/SC/NotoSerifSC-Regular.otf), SHA-256 `e8f396decc1f0963a016a989c3d8852e863d1350996f573860a80767c83a1cd3`. The copyright notice and full license are included in both source and APK at `app/src/main/res/raw/noto_serif_sc_ofl.txt` (APK: `res/raw/noto_serif_sc_ofl.txt`). This font approximates the serif style visible in the NoFeed reference screenshots; it is not an assertion that NoFeed uses this exact font.
+
+Gradle Wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`) is from [Gradle 8.9](https://github.com/gradle/gradle/tree/v8.9.0), copyright Gradle contributors, Apache License 2.0. See [the upstream license](https://github.com/gradle/gradle/blob/v8.9.0/LICENSE) and `gradle/LICENSE-APACHE-2.0.txt`.
+
+NoFeed, 豆瓣, 淘宝, 闲鱼, 微信 (WeChat), 哔哩哔哩 (Bilibili), 拼多多 (Pinduoduo), 小红书 (Xiaohongshu) and Android names identify the original inspiration or supported platforms. No affiliation or endorsement is implied. From 0.4.0, AGPL-3.0-only covers this project's original implementation, including its independently drawn geometric icons; it grants no trademark rights to those names or rights to third-party promotional screenshots. Research screenshots in the local ignored `docs/reference/` folder are excluded from source distributions. The disposable UI test fixture is not a WeChat client and its APK is not distributed.
+
+Versions 0.3.5–0.5.0 read installed applications' icons from Android PackageManager. Starting with **0.6.0**, seven platform icons are bundled so their display does not depend on installation or system theme. They were rendered from the original APK icon resources for platform identification; exact source versions and SHA-256 values are documented in [PLATFORM_ICONS.md](docs/PLATFORM_ICONS.md). Platform artwork and trademarks belong to their respective rights holders and are **not relicensed under this project's AGPL license**. Original third-party APKs and code are not bundled.
+
+The Yisou magnifier-and-bar launcher icon, more button, drag handle and missing-app placeholder are original vector artwork covered by AGPL-3.0-only in current releases. Earlier MIT grants remain as described in LICENSING.md.

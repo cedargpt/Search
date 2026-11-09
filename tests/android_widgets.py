@@ -1,0 +1,191 @@
+"""System AppWidgetHost regression; disposable emulator only, no real launcher.
+
+Build scripts/build-widget-fixture.py first. Restores the temporary keyboard
+setting and widget-binding permission, then uninstalls only this test host.
+"""
+import argparse
+from pathlib import Path
+import re
+import shlex
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+
+p = argparse.ArgumentParser()
+p.add_argument('--adb', required=True)
+p.add_argument('--serial', required=True)
+p.add_argument('--apk', type=Path, required=True)
+p.add_argument('--disposable-emulator', action='store_true')
+p.add_argument('--paging-widths', type=int, nargs='+', default=[300,220,250],
+               help='Widget widths in dp; keep each within the test screen width')
+p.add_argument('--paging-only', action='store_true', help='Run arrow coverage and refresh checks without submitting third-party searches')
+a = p.parse_args()
+root = Path(__file__).resolve().parents[1]
+host = 'org.nofeed.widgetfixture'
+target_labels = ['豆瓣', '淘宝', '闲鱼', '微信', '哔哩哔哩', '拼多多', '小红书', '美团', '携程', '高德地图', '淘宝闪购']
+if not a.disposable_emulator or not a.serial.startswith(('127.0.0.1:', 'emulator-')):
+    raise SystemExit('Requires an explicitly disposable emulator')
+
+def adb(*values):
+    return subprocess.check_output([a.adb, '-s', a.serial, *values], encoding='utf-8', errors='replace', timeout=60)
+def shell(*values): return adb('shell', shlex.join(values)).strip()
+def nodes():
+    for _ in range(3):
+        shell('rm', '-f', '/sdcard/yisou-widget-test.xml')
+        status = shell('uiautomator', 'dump', '/sdcard/yisou-widget-test.xml')
+        if 'dumped' in status:
+            return list(ET.fromstring(shell('cat', '/sdcard/yisou-widget-test.xml')).iter('node'))
+        time.sleep(.4)
+    raise AssertionError('No fresh UI tree; refusing to reuse stale nodes')
+def find(text=None, desc=None, index=0):
+    found = [n for n in nodes() if (text is None or n.get('text') == text) and (desc is None or n.get('content-desc') == desc)]
+    if len(found) <= index and text in target_labels:
+        # The native selector may scroll now that it has eleven entries.
+        for _ in target_labels:
+            current = nodes()
+            found = [n for n in current if n.get('text') == text]
+            if len(found) > index: return found[index]
+            chooser = next((n for n in current if n.get('class') == 'android.widget.ListView' and n.get('scrollable') == 'true'
+                            and n.get('resource-id') != 'org.nofeed.android:id/widget_apps'), None)
+            if chooser is None: break
+            x1,y1,x2,y2 = map(int,re.findall(r'\d+',chooser.get('bounds')))
+            shell('input','swipe',str((x1+x2)//2),str(y2-16),str((x1+x2)//2),str(y1+16),'350'); time.sleep(.3)
+    if len(found) <= index: raise AssertionError('Missing UI: '+str(text or desc))
+    return found[index]
+def tap(text=None, desc=None, index=0):
+    n = find(text, desc, index); x1,y1,x2,y2 = map(int, re.findall(r'\d+', n.get('bounds')))
+    shell('input', 'tap', str((x1+x2)//2), str((y1+y2)//2)); time.sleep(.4)
+def launch_host(width=300, height=70):
+    shell('am', 'start', '-W', '-f', '0x24000000', '-n', host+'/fixture.MainActivity', '--ei', 'compact_height', str(height), '--ei', 'widget_width', str(width)); time.sleep(.8)
+
+def capture(name):
+    shell('screencap', '-p', '/sdcard/yisou-widget-test.png')
+    adb('pull', '/sdcard/yisou-widget-test.png', str(root/'build/widget-fixture'/name))
+
+def swipe_apps(left=True):
+    n = next(n for n in nodes() if n.get('resource-id') == 'org.nofeed.android:id/widget_apps')
+    x1,y1,x2,y2 = map(int, re.findall(r'\d+', n.get('bounds')))
+    assert x2-x1 > y2-y1, 'Collection must have a horizontal viewport'
+    start,end = (x2-18,x1+18) if left else (x1+18,x2-18)
+    shell('input','swipe',str(start),str((y1+y2)//2),str(end),str((y1+y2)//2),'450');time.sleep(.4)
+
+def target_visible(target):
+    desc=target+'，输入并搜索'
+    for left in (True, False):
+        previous=None
+        for _ in range(len(target_labels)+1):
+            current=nodes()
+            apps=[n for n in current if n.get('content-desc','').endswith('，输入并搜索') and n.get('bounds')!='[0,0][0,0]']
+            for item in apps:
+                x1,y1,x2,y2=map(int,re.findall(r'\d+',item.get('bounds')))
+                if item.get('content-desc')==desc and x2-x1>18 and y2>y1:return
+            page=tuple(n.get('content-desc') for n in apps)
+            if page==previous:break
+            previous=page;swipe_apps(left)
+    raise AssertionError('Cannot horizontally reach '+target)
+
+def close_sheet():
+    tap(desc='关闭快捷搜索'); launch_host()
+
+def arrow_coverage(width):
+    # No swipe fallback: the arrow alone must expose every complete icon.
+    launch_host(width)
+    def page(current):
+        query=next(n for n in current if n.get('resource-id')=='org.nofeed.android:id/widget_query')
+        _,top,_,bottom=map(int,re.findall(r'\d+',query.get('bounds')))
+        full_width=(bottom-top)*44/36
+        return tuple(n.get('content-desc').split('，',1)[0] for n in current
+                     if n.get('content-desc','').endswith('，输入并搜索')
+                     and (lambda b:b[2]-b[0]>=full_width-2)(list(map(int,re.findall(r'\d+',n.get('bounds'))))))
+    current=nodes(); history=[page(current)]; seen=set(history[0])
+    for _ in range(len(target_labels)):
+        arrow=next(n for n in current if n.get('resource-id')=='org.nofeed.android:id/widget_next')
+        if arrow.get('content-desc')=='前一组应用': break
+        x1,y1,x2,y2=map(int,re.findall(r'\d+',arrow.get('bounds')))
+        shell('input','tap',str((x1+x2)//2),str((y1+y2)//2));time.sleep(.4)
+        current=nodes(); full=page(current)
+        assert full and full!=history[-1], ('Arrow did not advance',width,history)
+        assert set(full)-seen, ('Next page must expose additional complete apps',width,history,full)
+        history.append(full);seen.update(full)
+        if width==300:capture('paging-0.8.2-'+str(len(history))+'.png')
+    else: raise AssertionError('Forward arrow never reached the last page')
+    assert seen==set(target_labels), ('Arrow-only paging skipped apps',width,set(target_labels)-seen,history)
+    assert len(history)>2, ('Eleven apps need intermediate pages at this width',width,history)
+    expected={300:3,220:6,250:4}
+    if width in expected:
+        assert len(history)==expected[width], ('Full-page stride requires fewer pages',width,history)
+    for expected in reversed(history[:-1]):
+        arrow=next(n for n in current if n.get('resource-id')=='org.nofeed.android:id/widget_next')
+        assert arrow.get('content-desc')=='前一组应用'
+        x1,y1,x2,y2=map(int,re.findall(r'\d+',arrow.get('bounds')))
+        shell('input','tap',str((x1+x2)//2),str((y1+y2)//2));time.sleep(.4)
+        current=nodes();assert page(current)==expected, ('Return arrow skipped a page',width,expected,page(current))
+    assert any(n.get('content-desc')=='下一组应用' for n in current)
+    # Reapply after reaching the end must reset both position and arrow text.
+    for _ in history[:-1]: tap(desc='下一组应用')
+    launch_host(width)
+    assert page(nodes())==history[0]
+    find(desc='下一组应用')
+    print('PASS full-page arrows fully expose all eleven apps and retrace '+str(len(history))+' pages at '+str(width)+'dp; refresh resets arrow',flush=True)
+
+def remaining_checks():
+    launch_host()
+    initial={n.get('content-desc') for n in nodes()}
+    swipe_apps(True); after={n.get('content-desc') for n in nodes()}
+    assert after != initial and any(d and d.endswith('，输入并搜索') and d not in initial for d in after), 'Horizontal drag must reveal additional apps'
+    capture('widgets-scrolled.png');swipe_apps(False)
+    print('PASS horizontal finger swipe reveals additional application icons', flush=True)
+    for target in target_labels:
+        target_visible(target);tap(desc=target+'，输入并搜索')
+        find(desc='快捷搜索关键词'); find(text=target+' ▾')
+        assert not any('源码与许可' in n.get('text','') for n in nodes())
+        if target == '豆瓣': capture('input.png')
+        close_sheet()
+    print('PASS all eleven collection clicks preserve the selected application', flush=True)
+    tap(desc='输入关键词并选择搜索应用'); find(desc='快捷搜索关键词')
+    tap(desc='切换搜索应用'); tap(text='豆瓣'); find(text='豆瓣 ▾')
+    tap(desc='提交快捷搜索'); find(desc='快捷搜索关键词')
+    print('PASS search field opens input, switches platform, and rejects empty queries', flush=True)
+    close_sheet()
+    launch_host(220);find(desc='输入关键词并选择搜索应用');target_visible('淘宝闪购');tap(desc='淘宝闪购，输入并搜索');find(text='淘宝闪购 ▾');close_sheet()
+    launch_host(300,156);find(desc='输入关键词并选择搜索应用');launch_host()
+    print('PASS narrow resizing remains horizontally scrollable and no second layout appears', flush=True)
+    target_visible('豆瓣')
+    tap(desc='豆瓣，输入并搜索')
+    shell('input', 'text', 'Harry%sPotter')
+    find(text='Harry Potter', desc='快捷搜索关键词'); tap(desc='提交快捷搜索')
+    for _ in range(6):
+        time.sleep(1); current = nodes()
+        if any(n.get('package') == 'com.douban.frodo' and 'Harry Potter' in (n.get('text','')+n.get('content-desc','')) for n in current): break
+    else: raise AssertionError('No Douban keyword reached the destination')
+    assert not any(n.get('content-desc') == '快捷搜索关键词' for n in current)
+    print('PASS typed keyword dispatched to Douban and transient input closed', flush=True)
+    denied = subprocess.run([a.adb, '-s', a.serial, 'shell', 'am', 'start', '-n', 'org.nofeed.android/.WidgetSearchActivity'], capture_output=True, text=True, encoding='utf-8', errors='replace')
+    assert 'Permission Denial' in denied.stdout+denied.stderr
+    print('PASS external callers cannot launch the private widget input directly', flush=True)
+
+if 'package:'+host in shell('pm', 'list', 'packages', host).splitlines():
+    raise SystemExit('Existing test host detected; remove it deliberately before running')
+keyboard = shell('settings', 'get', 'secure', 'show_ime_with_hard_keyboard')
+installed = False
+try:
+    adb('install', '-r', str(a.apk.resolve()))
+    adb('install', str(root/'build/widget-fixture/fixture.apk')); installed = True
+    shell('appwidget', 'grantbind', '--package', host, '--user', '0')
+    shell('settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
+    launch_host(); ns = nodes()
+    assert not any(n.get('text') == 'TEST_BIND_DENIED' for n in ns)
+    assert any('OEM 自适应包装图标：回归通过' in n.get('text','') for n in ns)
+    assert len([n for n in ns if n.get('content-desc') == '输入关键词并选择搜索应用']) == 1
+    assert not any(n.get('text') in target_labels for n in ns), 'Widget icons have no visible names'
+    capture('widgets.png')
+    print('PASS one compact RemoteViews layout and production OEM icon regression', flush=True)
+    for width in a.paging_widths: arrow_coverage(width)
+    if not a.paging_only: remaining_checks()
+finally:
+    if keyboard == 'null': shell('settings', 'delete', 'secure', 'show_ime_with_hard_keyboard')
+    else: shell('settings', 'put', 'secure', 'show_ime_with_hard_keyboard', keyboard)
+    if installed:
+        shell('appwidget', 'revokebind', '--package', host, '--user', '0')
+        adb('uninstall', host)
+print('Widget host checks passed; Huawei/Xiaomi physical launchers remain unverified.', flush=True)

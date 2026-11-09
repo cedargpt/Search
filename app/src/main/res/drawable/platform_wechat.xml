@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vector redraw of the original platform artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:fillColor="#FF07C160"
+        android:pathData="M26,4 h56 a22,22 0 0 1 22,22 v56 a22,22 0 0 1 -22,22 h-56 a22,22 0 0 1 -22,-22 v-56 a22,22 0 0 1 22,-22 z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M44,30 C29,30 18,39 18,50 C18,57 23,63 30,66 L27,74 L37,69 C39.3,69.7 41.6,70 44,70 C59,70 70,61 70,50 C70,39 59,30 44,30 Z M74,48 C64,48 56,54.5 56,62.5 C56,70.5 64,77 74,77 C76.2,77 78.4,76.7 80.4,76.1 L88,80 L85.5,73.6 C89.4,71 92,67 92,62.5 C92,54.5 84,48 74,48 Z" />
+    <path
+        android:fillColor="#FF07C160"
+        android:pathData="M34,44 m-3.6,0 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z M54,44 m-3.6,0 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z" />
+</vector>
