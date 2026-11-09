@@ -18,17 +18,6 @@ ROOT_FILES = (
     'docs/widgets-yisou-0.4.0.png',
     'docs/home-yisou-0.5.0.png', 'docs/settings-yisou-0.5.0.png',
     'docs/widget-yisou-0.5.0.png', 'docs/widget-yisou-0.5.0-scrolled.png',
-    'app/src/main/res/drawable-nodpi/platform_douban.png',
-    'app/src/main/res/drawable-nodpi/platform_taobao.png',
-    'app/src/main/res/drawable-nodpi/platform_xianyu.png',
-    'app/src/main/res/drawable-nodpi/platform_wechat.png',
-    'app/src/main/res/drawable-nodpi/platform_bilibili.png',
-    'app/src/main/res/drawable-nodpi/platform_pinduoduo.png',
-    'app/src/main/res/drawable-nodpi/platform_xiaohongshu.png',
-    'app/src/main/res/drawable-nodpi/platform_meituan.png',
-    'app/src/main/res/drawable-nodpi/platform_ctrip.png',
-    'app/src/main/res/drawable-nodpi/platform_amap.png',
-    'app/src/main/res/drawable-nodpi/platform_taobao_shangou.png',
     'docs/PLATFORM_ICONS.md',
     'docs/settings-light-yisou-0.7.0.png',
     'docs/settings-dark-yisou-0.7.0.png',
@@ -45,9 +34,20 @@ ROOT_FILES = (
     'docs/widget-input-yisou-0.6.0.png',
     'docs/widget-yisou-0.6.0.png',
     'docs/widget-yisou-0.6.0-scrolled.png',
-    # Unmodified upstream font plus its bundled redistribution license.
-    'app/src/main/res/font/noto_serif_sc_regular.otf',
+    # Search 1.2.0 removed the bundled CJK font (see THIRD_PARTY_NOTICES.md);
+    # only the licence text of the former font stays for historical reference.
     'app/src/main/res/raw/noto_serif_sc_ofl.txt',
+    # Launcher icons generated for this fork (Search), reviewed in 1.2.0.
+    'app/src/main/res/mipmap-mdpi/ic_launcher.png',
+    'app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png',
+    'app/src/main/res/mipmap-hdpi/ic_launcher.png',
+    'app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png',
+    'app/src/main/res/mipmap-xhdpi/ic_launcher.png',
+    'app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png',
+    'app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
+    'app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png',
+    'app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+    'app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png',
     'app/src/main/res/raw/agpl_3.txt',
 )
 SOURCE_DIRS = {

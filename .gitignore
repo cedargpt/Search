@@ -22,6 +22,8 @@ PowerShell*/
 *.pem
 *.key
 *.log
+*.err
+*.pid
 *.hprof
 .env
 .env.*
